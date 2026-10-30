@@ -60,6 +60,11 @@ function humanRoll() {
   enterMovePhase();
 }
 
+// A checker on the bar must be played first, so keep it selected.
+function autoSelect() {
+  if (game.phase === 'move' && game.s.bar[0] > 0 && game.legal.some(m => m.from === BAR)) game.selected = BAR;
+}
+
 function enterMovePhase() {
   game.legal = legalFirstMoves(game.s, 1, game.rem);
   game.selected = null; game.hint = null;
@@ -70,7 +75,8 @@ function enterMovePhase() {
     return;
   }
   game.phase = 'move';
-  game.msg = 'Tap a glowing checker, then a green spot.';
+  autoSelect();
+  game.msg = game.selected === BAR ? 'You\'re on the bar. Tap a green spot to enter.' : 'Tap a glowing checker, then a green spot.';
   render(); save();
 }
 
@@ -99,7 +105,8 @@ function enterMovePhaseAfterMove() {
     game.msg = game.rem.length ? 'No more moves.' : 'Done.';
     endHumanTurn();
   } else {
-    game.msg = 'Tap a glowing checker, then a green spot.';
+    autoSelect();
+    game.msg = game.selected === BAR ? 'You\'re on the bar. Tap a green spot to enter.' : 'Tap a glowing checker, then a green spot.';
     render(); save();
   }
 }
@@ -111,6 +118,7 @@ function undo() {
   game.s = h.s; game.rem = h.rem; game.rolled = h.rolled; game.last = h.last;
   game.legal = legalFirstMoves(game.s, 1, game.rem);
   game.selected = null; game.hint = null; game.phase = 'move';
+  autoSelect();
   game.msg = 'Move undone.';
   render(); save();
 }
@@ -121,6 +129,7 @@ function hint() {
   if (!t || !t.moves.length) return;
   game.hint = { from: t.moves[0].from, to: t.moves[0].to };
   game.selected = null;
+  autoSelect();
   game.msg = 'Blue shows a good move.';
   render();
 }
@@ -221,6 +230,7 @@ function onBoardClick(ev) {
   } else {
     game.selected = null;
   }
+  autoSelect();
   render();
 }
 
