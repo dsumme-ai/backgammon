@@ -55,6 +55,7 @@ function beginHumanTurn() {
 function humanRoll() {
   const d = rollDice();
   game.rolled.h = d;
+  game.rolled.a = []; // only show the dice for the current turn
   game.rem = diceToRem(d);
   enterMovePhase();
 }
