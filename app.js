@@ -25,7 +25,7 @@ function startGame() {
   clearTimeout(timer);
   game = {
     s: newState(), rem: [], rolled: { h: [], a: [] }, phase: 'ai',
-    selected: null, legal: [], hint: null, last: [], history: [], msg: '',
+    selected: null, legal: [], hint: null, last: [], history: [], msg: '', turnNo: 0,
   };
   $('banner').hidden = true;
   let a, b;
@@ -54,10 +54,24 @@ function beginHumanTurn() {
 
 function humanRoll() {
   const d = rollDice();
+  game.turnNo++;
   game.rolled.h = d;
   game.rolled.a = []; // only show the dice for the current turn
   game.rem = diceToRem(d);
   enterMovePhase();
+}
+
+// Fast-forward: if every legal way to play the roll ends in the same position, just play it.
+function maybeAuto() {
+  const turns = genTurns(game.s, 1, game.rem);
+  if (turns.length !== 1 || !turns[0].moves.length) return false;
+  const m = turns[0].moves[0];
+  game.phase = 'auto';
+  game.selected = null; game.hint = null; game.legal = [];
+  game.msg = 'Only one way to play, moving for you…';
+  render(); save();
+  timer = setTimeout(() => doHumanMove(m, true), 650);
+  return true;
 }
 
 // A checker on the bar must be played first, so keep it selected.
@@ -75,6 +89,7 @@ function enterMovePhase() {
     return;
   }
   game.phase = 'move';
+  if (maybeAuto()) return;
   autoSelect();
   game.msg = game.selected === BAR ? 'You\'re on the bar. Tap a green spot to enter.' : 'Tap a glowing checker, then a green spot.';
   render(); save();
@@ -87,8 +102,9 @@ function endHumanTurn() {
   timer = setTimeout(() => aiTurn(), 1000);
 }
 
-function doHumanMove(m) {
+function doHumanMove(m, auto = false) {
   game.history.push({
+    auto, turn: game.turnNo,
     s: game.s, rem: game.rem.slice(), rolled: { h: game.rolled.h.slice(), a: game.rolled.a.slice() },
     last: game.last,
   });
@@ -105,6 +121,8 @@ function enterMovePhaseAfterMove() {
     game.msg = game.rem.length ? 'No more moves.' : 'Done.';
     endHumanTurn();
   } else {
+    game.phase = 'move';
+    if (maybeAuto()) return;
     autoSelect();
     game.msg = game.selected === BAR ? 'You\'re on the bar. Tap a green spot to enter.' : 'Tap a glowing checker, then a green spot.';
     render(); save();
@@ -112,9 +130,12 @@ function enterMovePhaseAfterMove() {
 }
 
 function undo() {
-  if (!game || !game.history.length || !['move', 'roll', 'pending'].includes(game.phase)) return;
+  if (!game || !game.history.length || !['move', 'roll', 'pending', 'auto'].includes(game.phase)) return;
   clearTimeout(timer);
-  const h = game.history.pop();
+  // take back automatic moves together with the move that led to them
+  let h;
+  do { h = game.history.pop(); }
+  while (h.auto && game.history.length && game.history[game.history.length - 1].turn === h.turn);
   game.s = h.s; game.rem = h.rem; game.rolled = h.rolled; game.last = h.last;
   game.legal = legalFirstMoves(game.s, 1, game.rem);
   game.selected = null; game.hint = null; game.phase = 'move';
@@ -185,9 +206,9 @@ function restore() {
   if (!sv || !sv.s || !Array.isArray(sv.s.pts)) return false;
   game = {
     s: sv.s, rem: sv.rem || [], rolled: sv.rolled || { h: [], a: [] }, phase: sv.phase,
-    selected: null, legal: [], hint: null, last: sv.last || [], history: [], msg: 'Welcome back.',
+    selected: null, legal: [], hint: null, last: sv.last || [], history: [], msg: 'Welcome back.', turnNo: 0,
   };
-  if (game.phase === 'move') enterMovePhase();
+  if (game.phase === 'move' || game.phase === 'auto') enterMovePhase();
   else if (game.phase === 'roll') beginHumanTurn();
   else aiTurn();
   return true;
@@ -385,7 +406,7 @@ function render() {
   $('pips').textContent = `Pips: You ${pipCount(game.s, 1)} · CPU ${pipCount(game.s, -1)}`;
   const st = stats[level] || { w: 0, l: 0 };
   $('stats').textContent = `${LEVELS[level]}: ${st.w}W – ${st.l}L`;
-  $('undo').disabled = !(game.history.length && ['move', 'roll', 'pending'].includes(game.phase));
+  $('undo').disabled = !(game.history.length && ['move', 'roll', 'pending', 'auto'].includes(game.phase));
   $('hint').disabled = game.phase !== 'move';
   document.querySelectorAll('#level button').forEach(b => b.classList.toggle('on', b.dataset.level === level));
 }

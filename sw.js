@@ -1,5 +1,5 @@
 // Network-first so updates arrive when online; falls back to cache so the game works offline.
-const CACHE = 'backgammon-v4';
+const CACHE = 'backgammon-v5';
 const FILES = ['./', 'index.html', 'style.css', 'engine.js', 'app.js', 'manifest.webmanifest',
   'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'];
 
