@@ -19,20 +19,17 @@
   <div id="board"></div>
   <div id="panel">
     <div id="msg"></div>
-    <div id="pips"></div>
-    <div class="row">
-      <button id="undo">Undo</button>
-      <button id="hint">Hint</button>
+    <div id="actions">
+      <button id="undo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg><span>Undo</span></button>
+      <button id="hint"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2V17h6v-.3c0-.8.4-1.5 1-2A7 7 0 0 0 12 2z"/></svg><span>Hint</span></button>
+      <button id="new"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.5 6.2L3 16M3 21v-5h5"/></svg><span>New game</span></button>
     </div>
-    <label class="lvl">Level
-      <select id="level">
-        <option value="easy">Easy</option>
-        <option value="medium">Medium</option>
-        <option value="hard">Hard</option>
-      </select>
-    </label>
-    <button id="new">New game</button>
-    <div id="stats"></div>
+    <div id="level" role="group" aria-label="Difficulty">
+      <button data-level="easy">Easy</button>
+      <button data-level="medium">Medium</button>
+      <button data-level="hard">Hard</button>
+    </div>
+    <div id="info"><span id="pips"></span><span id="stats"></span></div>
   </div>
   <div id="banner" hidden>
     <div class="card">

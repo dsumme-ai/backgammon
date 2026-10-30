@@ -1,7 +1,7 @@
 'use strict';
 // UI + game flow. Rules and AI live in engine.js.
 
-const W = 1060, H = 560, PW = 72, R = 28, TH = 230;
+const W = 1060, H = 480, PW = 72, R = 27, TH = 200;
 const LEFT = 20, RIGHT = 508, BARX = 452, BARW = 56, TRAY = 950, TRAYW = 90;
 const SAVE_KEY = 'bg-save-v1', STAT_KEY = 'bg-stats-v1', LEVEL_KEY = 'bg-level-v1';
 const LEVELS = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
@@ -230,7 +230,7 @@ const colX = n => (n <= 6 ? RIGHT + (6 - n) * PW
   : n <= 12 ? LEFT + (12 - n) * PW
   : n <= 18 ? LEFT + (n - 13) * PW
   : RIGHT + (n - 19) * PW);
-const spacing = n => (n <= 4 ? 2 * R : (TH - 2 * R) / (n - 1));
+const spacing = n => (n <= 1 ? 2 * R : Math.min(2 * R, (TH - 2 * R) / (n - 1)));
 const slotY = (top, k, sp) => (top ? 20 + R + k * sp : H - 20 - R - k * sp);
 
 function checker(cx, cy, human) {
@@ -244,14 +244,14 @@ function label(x, y, text, portrait, fill = '#888', size = 22) {
 }
 
 function die(x, y, v, faded) {
-  const S = 48, o = 12, c = S / 2;
+  const S = 40, o = 10, c = S / 2;
   const P = {
     1: [[0, 0]], 2: [[-o, -o], [o, o]], 3: [[-o, -o], [0, 0], [o, o]],
     4: [[-o, -o], [o, -o], [-o, o], [o, o]], 5: [[-o, -o], [o, -o], [0, 0], [-o, o], [o, o]],
     6: [[-o, -o], [o, -o], [-o, 0], [o, 0], [-o, o], [o, o]],
   };
   let g = `<g opacity="${faded ? 0.3 : 1}"><rect x="${x}" y="${y}" width="${S}" height="${S}" rx="9" fill="#f6f0e2" stroke="#222" stroke-width="2"/>`;
-  for (const [dx, dy] of P[v]) g += `<circle cx="${x + c + dx}" cy="${y + c + dy}" r="4.6" fill="#222"/>`;
+  for (const [dx, dy] of P[v]) g += `<circle cx="${x + c + dx}" cy="${y + c + dy}" r="4" fill="#222"/>`;
   return g + '</g>';
 }
 
@@ -259,7 +259,7 @@ function diceRow(list, cx, rem) {
   if (!list.length) return '';
   const vals = list[0] === list[1] ? [list[0], list[0], list[0], list[0]] : list.slice();
   const left = rem ? rem.slice() : null;
-  const gap = 10, S = 48, total = vals.length * S + (vals.length - 1) * gap;
+  const gap = 10, S = 40, total = vals.length * S + (vals.length - 1) * gap;
   let o = '', x = cx - total / 2;
   for (const v of vals) {
     let faded = false;
@@ -285,10 +285,10 @@ function boardSVG(portrait) {
     <radialGradient id="gA" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#4a4a54"/><stop offset="1" stop-color="#17171b"/></radialGradient>
   </defs>`;
   o += `<rect width="${W}" height="${H}" rx="18" fill="#4a2f18"/>`;
-  o += `<rect x="${LEFT}" y="20" width="432" height="520" fill="#1b5e45"/>`;
-  o += `<rect x="${RIGHT}" y="20" width="432" height="520" fill="#1b5e45"/>`;
+  o += `<rect x="${LEFT}" y="20" width="432" height="${H - 40}" fill="#1b5e45"/>`;
+  o += `<rect x="${RIGHT}" y="20" width="432" height="${H - 40}" fill="#1b5e45"/>`;
   o += `<rect x="${BARX}" y="14" width="${BARW}" height="${H - 28}" fill="#5a3a1e"/>`;
-  o += `<rect x="${TRAY}" y="20" width="${TRAYW}" height="520" fill="#2a1a0d"/>`;
+  o += `<rect x="${TRAY}" y="20" width="${TRAYW}" height="${H - 40}" fill="#2a1a0d"/>`;
 
   for (let n = 1; n <= 24; n++) {
     const i = n - 1, x = colX(n), top = n >= 13, cx = x + PW / 2;
@@ -323,8 +323,8 @@ function boardSVG(portrait) {
   // bar
   const bx = BARX + BARW / 2;
   const hb = s.bar[0], ab = s.bar[1];
-  const hsp = hb > 4 ? (TH - 2 * R) / (hb - 1) : 2 * R;
-  const asp = ab > 4 ? (TH - 2 * R) / (ab - 1) : 2 * R;
+  const hsp = spacing(hb);
+  const asp = spacing(ab);
   for (let k = 0; k < hb; k++) o += checker(bx, H / 2 + R + 6 + k * hsp, true);
   for (let k = 0; k < ab; k++) o += checker(bx, H / 2 - R - 6 - k * asp, false);
   if (hb && srcs.has(BAR)) {
@@ -341,20 +341,20 @@ function boardSVG(portrait) {
   const offHint = hint && hint.to === OFF;
   if (canOff || offHint) {
     const col = offHint && !offTarget ? '#5cb8ff' : '#7dffa0';
-    o += `<rect class="offglow${offTarget ? ' strong' : ''}" x="${TRAY}" y="20" width="${TRAYW}" height="520" fill="${col}"/>`;
-    o += `<rect x="${TRAY + 3}" y="23" width="${TRAYW - 6}" height="514" fill="none" stroke="${col}" stroke-width="4" stroke-dasharray="14 8" rx="6"/>`;
+    o += `<rect class="offglow${offTarget ? ' strong' : ''}" x="${TRAY}" y="20" width="${TRAYW}" height="${H - 40}" fill="${col}"/>`;
+    o += `<rect x="${TRAY + 3}" y="23" width="${TRAYW - 6}" height="${H - 46}" fill="none" stroke="${col}" stroke-width="4" stroke-dasharray="14 8" rx="6"/>`;
     const cx = TRAY + TRAYW / 2;
     o += label(cx, H / 2 - 14, 'BEAR', portrait, '#fff', 20);
     o += label(cx, H / 2 + 14, 'OFF', portrait, '#fff', 20);
     if (offTarget) o += label(cx, H / 2 + 50, '▼', portrait, '#fff', 22);
   }
   for (let k = 0; k < s.off[0]; k++) {
-    o += `<rect x="${TRAY + 10}" y="${540 - 6 - (k + 1) * 17}" width="${TRAYW - 20}" height="14" rx="3" fill="url(#gH)" stroke="#8d7c5c"/>`;
+    o += `<rect x="${TRAY + 10}" y="${H - 20 - 6 - (k + 1) * 17}" width="${TRAYW - 20}" height="14" rx="3" fill="url(#gH)" stroke="#8d7c5c"/>`;
   }
   for (let k = 0; k < s.off[1]; k++) {
     o += `<rect x="${TRAY + 10}" y="${24 + k * 17}" width="${TRAYW - 20}" height="14" rx="3" fill="url(#gA)" stroke="#000"/>`;
   }
-  o += `<rect data-off="1" x="${TRAY}" y="20" width="${TRAYW}" height="520" fill="transparent"/>`;
+  o += `<rect data-off="1" x="${TRAY}" y="20" width="${TRAYW}" height="${H - 40}" fill="transparent"/>`;
 
   // dice: computer's on the left half, yours on the right half
   o += diceRow(game.rolled.a, 236, null);
@@ -372,12 +372,12 @@ function render() {
   wrap.innerHTML = boardSVG(portrait);
 
   $('msg').textContent = game.msg;
-  $('pips').textContent = `Pips — You ${pipCount(game.s, 1)} · CPU ${pipCount(game.s, -1)}`;
+  $('pips').textContent = `Pips: You ${pipCount(game.s, 1)} · CPU ${pipCount(game.s, -1)}`;
   const st = stats[level] || { w: 0, l: 0 };
   $('stats').textContent = `${LEVELS[level]}: ${st.w}W – ${st.l}L`;
   $('undo').disabled = !(game.history.length && ['move', 'roll', 'pending'].includes(game.phase));
   $('hint').disabled = game.phase !== 'move';
-  $('level').value = level;
+  document.querySelectorAll('#level button').forEach(b => b.classList.toggle('on', b.dataset.level === level));
 }
 
 // ---------- boot ----------
@@ -389,8 +389,10 @@ $('again').addEventListener('click', startGame);
 $('new').addEventListener('click', () => {
   if (!game || game.phase === 'over' || confirm('Abandon this game and start a new one?')) startGame();
 });
-$('level').addEventListener('change', e => {
-  level = e.target.value; store.set(LEVEL_KEY, level); render();
+$('level').addEventListener('click', e => {
+  const b = e.target.closest('button[data-level]');
+  if (!b) return;
+  level = b.dataset.level; store.set(LEVEL_KEY, level); render();
 });
 window.addEventListener('resize', render);
 window.addEventListener('orientationchange', () => setTimeout(render, 150));
